@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { BooksModule } from './books/books.module';
 import { BookInventoryModule } from './book-inventory/book-inventory.module';
 import { AuthModule } from './auth/auth.module';
+import { BorrowsModule } from './borrows/borrows.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -50,6 +51,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     BooksModule,
     BookInventoryModule,
     AuthModule,
+    BorrowsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
