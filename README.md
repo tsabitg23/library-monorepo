@@ -146,6 +146,52 @@ pnpm exec turbo link
 pnpm exec turbo link
 ```
 
+## Database Migrations & Seeding
+
+These commands are run from the `apps/api` directory.
+
+### Migrations
+
+Run pending migrations:
+
+```sh
+cd apps/api
+pnpm run migration:run
+```
+
+Generate a new migration from entity changes:
+
+```sh
+pnpm run migration:generate src/database/migrations/MigrationName
+```
+
+Create an empty migration file:
+
+```sh
+pnpm run migration:create src/database/migrations/MigrationName
+```
+
+Revert the last applied migration:
+
+```sh
+pnpm run migration:revert
+```
+
+Show migration status:
+
+```sh
+pnpm run migration:show
+```
+
+### Seeding
+
+Seed the database with authors, publishers, tags, books, and related data:
+
+```sh
+cd apps/api
+pnpm run seed
+```
+
 ## Useful Links
 
 Learn more about the power of Turborepo:
