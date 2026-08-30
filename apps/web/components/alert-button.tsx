@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 
 export function AlertButton({ children }: { children: React.ReactNode }) {
   return (

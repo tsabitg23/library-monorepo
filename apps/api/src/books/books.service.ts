@@ -26,7 +26,6 @@ const BOOK_RELATIONS = {
   publisher: true,
   bookAuthors: { author: true },
   bookTags: { tag: true },
-  inventory: true,
 } as const;
 
 @Injectable()
@@ -34,10 +33,22 @@ export class BooksService {
   constructor(
     @InjectRepository(Book)
     private readonly booksRepository: Repository<Book>,
+    @InjectRepository(BookInventory)
+    private readonly inventoryRepository: Repository<BookInventory>,
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createBookDto: CreateBookDto): Promise<Book> {
+  private async getAvailabilityCount(
+    bookId: string,
+    manager: EntityManager = this.dataSource.manager,
+  ): Promise<number> {
+    const count = await manager.count(BookInventory, {
+      where: { bookId, status: BookInventoryStatus.AVAILABLE },
+    });
+    return count;
+  }
+
+  async create(createBookDto: CreateBookDto): Promise<Book & { availabilityCount: number }> {
     const { authorIds, tagIds, stock, ...bookData } = createBookDto;
 
     return this.dataSource.transaction(async (manager) => {
@@ -85,12 +96,13 @@ export class BooksService {
         })),
       );
 
-      return this.findOne(savedBook.id, manager);
+      const bookWithCount = await this.findOne(savedBook.id, manager);
+      return bookWithCount;
     });
   }
 
-  async findAll(query: FindBooksDto = {}): Promise<PaginatedResult<Book>> {
-    const { title, isbn, author, tags, page = 1, pageSize = 5 } = query;
+  async findAll(query: FindBooksDto = {}): Promise<PaginatedResult<Book & { availabilityCount: number }>> {
+    const { title, isbn, author, tags, page = 1, pageSize = 10 } = query;
 
     const qb = this.booksRepository
       .createQueryBuilder('book')
@@ -143,8 +155,15 @@ export class BooksService {
       : [];
     data.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
 
+    const dataWithCounts = await Promise.all(
+      data.map(async (book) => ({
+        ...book,
+        availabilityCount: await this.getAvailabilityCount(book.id),
+      })),
+    );
+
     return {
-      data,
+      data: dataWithCounts,
       page,
       pageSize,
       total,
@@ -155,7 +174,7 @@ export class BooksService {
   async findOne(
     id: string,
     manager: EntityManager = this.dataSource.manager,
-  ): Promise<Book> {
+  ): Promise<Book & { availabilityCount: number }> {
     const book = await manager.findOne(Book, {
       where: { id },
       relations: BOOK_RELATIONS,
@@ -163,10 +182,14 @@ export class BooksService {
     if (!book) {
       throw new NotFoundException(`Book with id ${id} not found`);
     }
-    return book;
+    const availabilityCount = await this.getAvailabilityCount(id, manager);
+    return {
+      ...book,
+      availabilityCount,
+    };
   }
 
-  async update(id: string, updateBookDto: UpdateBookDto): Promise<Book> {
+  async update(id: string, updateBookDto: UpdateBookDto): Promise<Book & { availabilityCount: number }> {
     const { authorIds, tagIds, ...bookData } = updateBookDto;
 
     return this.dataSource.transaction(async (manager) => {
