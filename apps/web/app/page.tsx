@@ -1,5 +1,14 @@
 import Image, { type ImageProps } from "next/image";
 import { Button } from "@repo/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AlertButton } from "@/components/alert-button";
 import styles from "./page.module.css";
 
 type Props = Omit<ImageProps, "src"> & {
@@ -66,6 +75,21 @@ export default function Home() {
         <Button appName="web" className={styles.secondary}>
           Open alert
         </Button>
+
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-2">
+              shadcn/ui
+              <Badge>Nova</Badge>
+            </CardTitle>
+            <CardDescription>
+              This card and button are rendered with shadcn/ui components.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AlertButton>Open alert</AlertButton>
+          </CardContent>
+        </Card>
       </main>
       <footer className={styles.footer}>
         <a
