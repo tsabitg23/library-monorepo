@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, ShoppingCart } from "lucide-react";
 import { Button } from "@repo/ui/button";
 import {
   DropdownMenu,
@@ -13,10 +13,18 @@ import {
 import { SearchInput } from "./search-input";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./auth-provider";
+import { useCart } from "@/lib/cart-store";
+import { useState, useEffect } from "react";
 
 export function TopNavBar() {
   const router = useRouter();
   const { isLoggedIn, logout, user } = useAuth();
+  const { items } = useCart();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -25,6 +33,10 @@ export function TopNavBar() {
 
   const handleLoginClick = () => {
     router.push("/login");
+  };
+
+  const handleCartClick = () => {
+    router.push("/cart");
   };
 
   return (
@@ -43,8 +55,25 @@ export function TopNavBar() {
             <SearchInput />
           </div>
 
-          {/* Right: Login/Profile */}
-          <div className="flex-shrink-0">
+          {/* Right: Cart and Login/Profile */}
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {/* Cart Icon */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCartClick}
+              className="relative hover:bg-muted"
+              aria-label="Shopping cart"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {isHydrated && items.length > 0 && (
+                <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  {items.length}
+                </span>
+              )}
+            </Button>
+
+            {/* Login/Profile */}
             {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

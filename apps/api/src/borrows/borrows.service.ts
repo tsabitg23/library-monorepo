@@ -99,6 +99,34 @@ export class BorrowsService {
         uniqueBookIds.length,
       );
 
+      const ongoingLoans = await manager.find(BookLoan, {
+        where: {
+          userId,
+          status: In([BookLoanStatus.ONGOING, BookLoanStatus.OVERDUE]),
+        } as any,
+        relations: { bookInventory: { book: true } },
+      });
+      const alreadyBorrowedBookIds = new Set(
+        ongoingLoans.map((loan) => loan.bookInventory?.bookId),
+      );
+      const bookIdsAlreadyOnLoan = uniqueBookIds.filter((bookId) =>
+        alreadyBorrowedBookIds.has(bookId),
+      );
+      if (bookIdsAlreadyOnLoan.length > 0) {
+        const titleByBookId = new Map(
+          ongoingLoans.map((loan) => [
+            loan.bookInventory?.bookId,
+            loan.bookInventory?.book?.title,
+          ]),
+        );
+        const titlesAlreadyOnLoan = bookIdsAlreadyOnLoan.map(
+          (bookId) => titleByBookId.get(bookId) ?? bookId,
+        );
+        throw new BadRequestException(
+          `User already has an ongoing loan for book(s): ${titlesAlreadyOnLoan.join(', ')}`,
+        );
+      }
+
       const createdLoans: BookLoan[] = [];
       for (const bookId of uniqueBookIds) {
         const availableInventory = await manager.findOne(BookInventory, {

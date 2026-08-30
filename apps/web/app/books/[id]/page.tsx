@@ -1,12 +1,36 @@
-import { TopNavBar } from "@/components/top-nav-bar";
+import { notFound } from "next/navigation";
+import { fetchBook } from "@/lib/books";
+import { BookDetailContent } from "./book-detail-content";
 
-export default function BookDetailPage() {
-  return (
-    <div className="min-h-screen bg-white">
-      <TopNavBar />
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold">Book details</h1>
-      </main>
-    </div>
-  );
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  try {
+    const { id } = await params;
+    const book = await fetchBook(id);
+    return {
+      title: book.title,
+      description: book.description,
+    };
+  } catch {
+    return {
+      title: "Book not found",
+    };
+  }
+}
+
+export default async function BookDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  try {
+    const { id } = await params;
+    const book = await fetchBook(id);
+    return <BookDetailContent book={book} />;
+  } catch (error) {
+    notFound();
+  }
 }

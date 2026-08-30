@@ -18,6 +18,11 @@ export class FindBooksDto {
   @IsString()
   author?: string;
 
+  @ApiPropertyOptional({ example: 'Penguin Books' })
+  @IsOptional()
+  @IsString()
+  publisher?: string;
+
   @ApiPropertyOptional({
     example: 'fantasy',
     description: 'Comma-separated list of tag names',

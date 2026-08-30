@@ -1,6 +1,5 @@
 "use client";
 
-import { TopNavBar } from "@/components/top-nav-bar";
 import { registerUser } from "@/lib/users";
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
@@ -51,7 +50,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNavBar />
       <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center px-4 py-10">
         <div className="w-full rounded-lg border border-border bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-8">

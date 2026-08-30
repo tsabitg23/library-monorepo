@@ -39,9 +39,24 @@ export function BookCatalogue() {
     ? requestedPageSize
     : 8;
 
+  const activeFilters = {
+    title: searchParams.get("title") || undefined,
+    isbn: searchParams.get("isbn") || undefined,
+    author: searchParams.get("author") || undefined,
+    publisher: searchParams.get("publisher") || undefined,
+    tags: searchParams.get("tags") || undefined,
+  };
+
+  const hasActiveFilters = Object.values(activeFilters).some(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+  const isSearchPage = pathname === "/book_search";
+  const shouldShowEmptyState = isSearchPage && !hasActiveFilters;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["books", requestedPage, pageSize],
-    queryFn: () => fetchBooks({ page: requestedPage, pageSize }),
+    queryKey: ["books", requestedPage, pageSize, activeFilters],
+    queryFn: () => fetchBooks({ page: requestedPage, pageSize, ...activeFilters }),
+    enabled: !shouldShowEmptyState,
   });
 
   const books = data?.data ?? [];
@@ -83,7 +98,12 @@ export function BookCatalogue() {
         </div>
       </div>
 
-      {isError ? (
+      {shouldShowEmptyState ? (
+        <EmptyBooks
+          title="Start searching"
+          description="Search by title, author, ISBN, or tag to find books in the collection."
+        />
+      ) : isError ? (
         <div className="flex min-h-80 items-center justify-center text-sm text-muted-foreground">
           Failed to load books. Please try again later.
         </div>
@@ -92,7 +112,10 @@ export function BookCatalogue() {
           Loading books...
         </div>
       ) : books.length === 0 ? (
-        <EmptyBooks />
+        <EmptyBooks
+          title="No books match your search"
+          description="Try a different title, author, ISBN, or tag to refine your results."
+        />
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4">
           {books.map((book) => (

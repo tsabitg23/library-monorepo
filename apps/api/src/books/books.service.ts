@@ -102,14 +102,15 @@ export class BooksService {
   }
 
   async findAll(query: FindBooksDto = {}): Promise<PaginatedResult<Book & { availabilityCount: number }>> {
-    const { title, isbn, author, tags, page = 1, pageSize = 10 } = query;
+    const { title, isbn, author, publisher, tags, page = 1, pageSize = 10 } = query;
 
     const qb = this.booksRepository
       .createQueryBuilder('book')
       .leftJoin('book.bookAuthors', 'bookAuthors')
       .leftJoin('bookAuthors.author', 'author')
       .leftJoin('book.bookTags', 'bookTags')
-      .leftJoin('bookTags.tag', 'tag');
+      .leftJoin('bookTags.tag', 'tag')
+      .leftJoin('book.publisher', 'publisher');
 
     if (title) {
       qb.andWhere('book.title ILIKE :title', { title: `%${title}%` });
@@ -121,6 +122,10 @@ export class BooksService {
 
     if (author) {
       qb.andWhere('author.name ILIKE :author', { author: `%${author}%` });
+    }
+
+    if (publisher) {
+      qb.andWhere('publisher.name ILIKE :publisher', { publisher: `%${publisher}%` });
     }
 
     if (tags) {
