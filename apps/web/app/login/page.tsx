@@ -4,6 +4,8 @@ import { TopNavBar } from "@/components/top-nav-bar";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
+import { Label } from "@repo/ui/label";
+import { toast } from "@repo/ui/sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,20 +19,23 @@ type LoginFormValues = {
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginFormValues>();
 
   const onSubmit = async (values: LoginFormValues) => {
-    setLoginError(null);
+    setIsSubmitting(true);
     try {
       await login(values.email, values.password);
+      toast.success("Logged in successfully.");
       router.push("/");
     } catch (error) {
-      setLoginError(error instanceof Error ? error.message : "Unable to log in.");
+      toast.error(error instanceof Error ? error.message : "Unable to log in.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,16 +50,15 @@ export default function LoginPage() {
           </div>
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="email">Email</label>
+              <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" autoComplete="email" {...register("email", { required: "Email is required." })} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="password">Password</label>
+              <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" autoComplete="current-password" {...register("password", { required: "Password is required." })} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-            {loginError && <p className="text-sm text-destructive" role="alert">{loginError}</p>}
             <Button className="w-full" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Logging in..." : "Log in"}
             </Button>
