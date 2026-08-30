@@ -10,6 +10,7 @@ import { TagsModule } from './tags/tags.module';
 import { UsersModule } from './users/users.module';
 import { BooksModule } from './books/books.module';
 import { BookInventoryModule } from './book-inventory/book-inventory.module';
+import { AuthModule } from './auth/auth.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -48,6 +49,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UsersModule,
     BooksModule,
     BookInventoryModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

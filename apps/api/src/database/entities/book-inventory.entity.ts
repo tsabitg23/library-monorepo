@@ -24,6 +24,7 @@ export enum BookCondition {
   GOOD = 'good',
   FAIR = 'fair',
   POOR = 'poor',
+  LOST = 'lost',
 }
 
 @Entity('book_inventory')
