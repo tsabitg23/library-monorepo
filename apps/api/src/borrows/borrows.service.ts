@@ -196,9 +196,14 @@ export class BorrowsService {
           );
         }
 
+        const returnDate = new Date();
         loan.returnCondition = item.returnCondition;
-        loan.returnDate = new Date();
-        loan.status = BookLoanStatus.RETURNED;
+        loan.returnDate = returnDate;
+        loan.notes = item.notes ?? loan.notes ?? null;
+        loan.status = this.getLoanStatusForReturnedBook(
+          loan.returnDeadline,
+          returnDate,
+        );
 
         const inventory = await manager.findOne(BookInventory, {
           where: { id: loan.bookInventoryId },
@@ -293,6 +298,17 @@ export class BorrowsService {
     ).length;
 
     return { lostCount, damageCount };
+  }
+
+  private getLoanStatusForReturnedBook(
+    returnDeadline: Date,
+    returnDate: Date,
+  ): BookLoanStatus {
+    if (returnDate.getTime() > new Date(returnDeadline).getTime()) {
+      return BookLoanStatus.OVERDUE;
+    }
+
+    return BookLoanStatus.RETURNED;
   }
 
   private getInventoryStatusForReturnedBook(

@@ -14,6 +14,16 @@ export enum BookCondition {
   LOST = "lost",
 }
 
+export function isSevereReturnCondition(
+  loan: Pick<BookLoan, "checkoutCondition" | "returnCondition">,
+): boolean {
+  return (
+    (loan.returnCondition === BookCondition.POOR ||
+      loan.returnCondition === BookCondition.LOST) &&
+    loan.checkoutCondition !== BookCondition.POOR
+  );
+}
+
 export type BookLoan = {
   id: string;
   returnDate: string | null;
@@ -21,6 +31,7 @@ export type BookLoan = {
   status: BookLoanStatus;
   checkoutCondition: BookCondition;
   returnCondition: BookCondition;
+  notes?: string | null;
   bookInventory?: {
     book?: {
       id: string;
@@ -82,6 +93,30 @@ export async function fetchBorrowHistory(
 
   if (!response.ok) {
     throw new Error(await extractErrorMessage(response, "Unable to load borrow history."));
+  }
+
+  return response.json();
+}
+
+export async function returnBooks(
+  accessToken: string,
+  returnItems: Array<{
+    bookId: string;
+    returnCondition: BookCondition;
+    notes?: string | null;
+  }>,
+): Promise<BookLoan[]> {
+  const response = await fetch(`${BASE_API}/return_books`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(returnItems),
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response, "Unable to return the selected books."));
   }
 
   return response.json();

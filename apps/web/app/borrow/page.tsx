@@ -3,10 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth";
-import { BookLoan, fetchBorrowHistory } from "@/lib/borrows";
+import {
+  BookCondition,
+  BookLoan,
+  BookLoanStatus,
+  fetchBorrowHistory,
+  isSevereReturnCondition,
+} from "@/lib/borrows";
 import { toast } from "@repo/ui/sonner";
 import { Badge } from "@repo/ui/badge";
 import { BASE_API } from "@/lib/utils";
+import { ReturnBookDialog } from "@/components/return-book-dialog";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, {
@@ -28,6 +35,14 @@ export default function BorrowPage() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const [loans, setLoans] = useState<BookLoan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleReturnSuccess = (updatedLoan: BookLoan) => {
+    setLoans((currentLoans) =>
+      currentLoans.map((loan) =>
+        loan.id === updatedLoan.id ? updatedLoan : loan,
+      ),
+    );
+  };
 
   useEffect(() => {
     if (!accessToken) {
@@ -91,42 +106,71 @@ export default function BorrowPage() {
 
         {/* Mobile Layout */}
         <div className="block space-y-4 lg:hidden">
-          {loans.map((loan) => (
-            <div
-              key={loan.id}
-              className="flex gap-4 border border-border rounded-lg p-4"
-            >
-              <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded">
-                <img
-                  src={`${BASE_API}/${loan.bookInventory?.book?.coverUrl}`}
-                  alt={loan.bookInventory?.book?.title}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <Link
-                  href={`/books/${loan.bookInventory?.book?.id}`}
-                  className="font-semibold hover:underline"
-                >
-                  {loan.bookInventory?.book?.title}
-                </Link>
-                <p className="text-sm text-muted-foreground">
-                  {loan.bookInventory?.book?.isbn}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                  <Badge variant="secondary">
-                    {formatCondition(loan.checkoutCondition)}
-                  </Badge>
-                  <span className="text-muted-foreground">
-                    Due {formatDate(loan.returnDeadline)}
-                  </span>
-                  {isOverdue(loan.returnDeadline) && (
-                    <Badge variant="destructive">Overdue</Badge>
+          {loans.map((loan) => {
+            const isReturned = loan.status === BookLoanStatus.RETURNED;
+            const showOverdueBadge = !isReturned && isOverdue(loan.returnDeadline);
+            const showRedReturnedBadge =
+              isReturned && isSevereReturnCondition(loan);
+
+            return (
+              <div
+                key={loan.id}
+                className="flex gap-4 border border-border rounded-lg p-4"
+              >
+                <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded">
+                  <img
+                    src={`${BASE_API}/${loan.bookInventory?.book?.coverUrl}`}
+                    alt={loan.bookInventory?.book?.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Link
+                    href={`/books/${loan.bookInventory?.book?.id}`}
+                    className="font-semibold hover:underline"
+                  >
+                    {loan.bookInventory?.book?.title}
+                  </Link>
+                  <p className="text-sm text-muted-foreground">
+                    {loan.bookInventory?.book?.isbn}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                    <Badge variant="secondary">
+                      {formatCondition(loan.checkoutCondition)}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      Due {formatDate(loan.returnDeadline)}
+                    </span>
+                    {isReturned ? (
+                      showRedReturnedBadge ? (
+                        <Badge variant="destructive">Returned</Badge>
+                      ) : (
+                        <Badge variant="success">Returned</Badge>
+                      )
+                    ) : showOverdueBadge ? (
+                      <Badge variant="destructive">Overdue</Badge>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="pt-1">
+                  {isReturned ? (
+                    showRedReturnedBadge ? (
+                      <ReturnBookDialog
+                        loan={loan}
+                        readOnly
+                        triggerLabel="Returned"
+                        onSuccess={handleReturnSuccess}
+                      />
+                    ) : (
+                      <Badge variant="success">Returned</Badge>
+                    )
+                  ) : (
+                    <ReturnBookDialog loan={loan} onSuccess={handleReturnSuccess} />
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Desktop Layout */}
@@ -146,48 +190,80 @@ export default function BorrowPage() {
                 <th className="px-4 py-4 text-left text-sm font-semibold">
                   Deadline
                 </th>
+                <th className="px-4 py-4 text-right text-sm font-semibold">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
-              {loans.map((loan) => (
-                <tr key={loan.id} className="border-b border-border">
-                  <td className="px-4 py-4">
-                    <div className="flex gap-4">
-                      <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded">
-                        <img
-                          src={`${BASE_API}/${loan.bookInventory?.book?.coverUrl}`}
-                          alt={loan.bookInventory?.book?.title}
-                          className="h-full w-full object-cover"
-                        />
+              {loans.map((loan) => {
+                const isReturned = loan.status === BookLoanStatus.RETURNED;
+                const showOverdueBadge = !isReturned && isOverdue(loan.returnDeadline);
+                const showRedReturnedBadge =
+                  isReturned && isSevereReturnCondition(loan);
+
+                return (
+                  <tr key={loan.id} className="border-b border-border">
+                    <td className="px-4 py-4">
+                      <div className="flex gap-4">
+                        <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded">
+                          <img
+                            src={`${BASE_API}/${loan.bookInventory?.book?.coverUrl}`}
+                            alt={loan.bookInventory?.book?.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-center">
+                          <Link
+                            href={`/books/${loan.bookInventory?.book?.id}`}
+                            className="font-semibold hover:underline"
+                          >
+                            {loan.bookInventory?.book?.title}
+                          </Link>
+                        </div>
                       </div>
-                      <div className="flex flex-col justify-center">
-                        <Link
-                          href={`/books/${loan.bookInventory?.book?.id}`}
-                          className="font-semibold hover:underline"
-                        >
-                          {loan.bookInventory?.book?.title}
-                        </Link>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-sm text-muted-foreground">
+                      {loan.bookInventory?.book?.isbn}
+                    </td>
+                    <td className="px-4 py-4">
+                      <Badge variant="secondary">
+                        {formatCondition(loan.checkoutCondition)}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        {formatDate(loan.returnDeadline)}
+                        {isReturned ? (
+                          showRedReturnedBadge ? (
+                            <Badge variant="destructive">Returned</Badge>
+                          ) : (
+                            <Badge variant="success">Returned</Badge>
+                          )
+                        ) : showOverdueBadge ? (
+                          <Badge variant="destructive">Overdue</Badge>
+                        ) : null}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 font-mono text-sm text-muted-foreground">
-                    {loan.bookInventory?.book?.isbn}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Badge variant="secondary">
-                      {formatCondition(loan.checkoutCondition)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      {formatDate(loan.returnDeadline)}
-                      {isOverdue(loan.returnDeadline) && (
-                        <Badge variant="destructive">Overdue</Badge>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      {isReturned ? (
+                        showRedReturnedBadge ? (
+                          <ReturnBookDialog
+                            loan={loan}
+                            readOnly
+                            triggerLabel="Returned"
+                            onSuccess={handleReturnSuccess}
+                          />
+                        ) : (
+                          <Badge variant="success">Returned</Badge>
+                        )
+                      ) : (
+                        <ReturnBookDialog loan={loan} onSuccess={handleReturnSuccess} />
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

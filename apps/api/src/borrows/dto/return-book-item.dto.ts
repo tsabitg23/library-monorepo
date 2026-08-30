@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { BookCondition } from '../../database/entities/book-inventory.entity';
 
 export class ReturnBookItemDto {
@@ -15,4 +15,15 @@ export class ReturnBookItemDto {
   )
   @IsEnum(BookCondition)
   returnCondition: BookCondition;
+
+  @ApiProperty({
+    type: 'string',
+    nullable: true,
+    required: false,
+    example: 'Cover had minor scratches but was returned on time.',
+  })
+  @Transform(({ value, obj }) => value ?? obj.notes ?? null)
+  @IsOptional()
+  @IsString()
+  notes?: string | null;
 }

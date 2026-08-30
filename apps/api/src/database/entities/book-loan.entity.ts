@@ -43,6 +43,9 @@ export class BookLoan {
   @Column({ name: 'return_condition', type: 'varchar' })
   returnCondition: BookCondition;
 
+  @Column({ name: 'notes', type: 'text', nullable: true })
+  notes: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
