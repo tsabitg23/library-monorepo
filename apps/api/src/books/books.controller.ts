@@ -8,10 +8,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { FindBooksDto } from './dto/find-books.dto';
+import { PaginatedResult } from '../common/utils/pagination.util';
 import { Book } from '../database/entities/book.entity';
 import { BooksService } from './books.service';
 
@@ -28,10 +31,14 @@ export class BooksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all books' })
+  @ApiOperation({
+    summary: 'List all books',
+    description:
+      'Optionally filter by title, isbn, author name and/or comma-separated tag names, paginated with page/pageSize (default pageSize: 5)',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: [Book] })
-  findAll(): Promise<Book[]> {
-    return this.booksService.findAll();
+  findAll(@Query() query: FindBooksDto): Promise<PaginatedResult<Book>> {
+    return this.booksService.findAll(query);
   }
 
   @Get(':id')

@@ -4,8 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { assertEntitiesExist, saveOrThrowConflict } from '../common/utils/typeorm.util';
+import { PaginatedResult } from '../common/utils/pagination.util';
 import { Book } from '../database/entities/book.entity';
 import { Author } from '../database/entities/author.entity';
 import { Tag } from '../database/entities/tag.entity';
@@ -19,6 +20,7 @@ import {
 } from '../database/entities/book-inventory.entity';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { FindBooksDto } from './dto/find-books.dto';
 
 const BOOK_RELATIONS = {
   publisher: true,
@@ -87,8 +89,67 @@ export class BooksService {
     });
   }
 
-  findAll(): Promise<Book[]> {
-    return this.booksRepository.find({ relations: BOOK_RELATIONS });
+  async findAll(query: FindBooksDto = {}): Promise<PaginatedResult<Book>> {
+    const { title, isbn, author, tags, page = 1, pageSize = 5 } = query;
+
+    const qb = this.booksRepository
+      .createQueryBuilder('book')
+      .leftJoin('book.bookAuthors', 'bookAuthors')
+      .leftJoin('bookAuthors.author', 'author')
+      .leftJoin('book.bookTags', 'bookTags')
+      .leftJoin('bookTags.tag', 'tag');
+
+    if (title) {
+      qb.andWhere('book.title ILIKE :title', { title: `%${title}%` });
+    }
+
+    if (isbn) {
+      qb.andWhere('book.isbn ILIKE :isbn', { isbn: `%${isbn}%` });
+    }
+
+    if (author) {
+      qb.andWhere('author.name ILIKE :author', { author: `%${author}%` });
+    }
+
+    if (tags) {
+      const tagNames = tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      if (tagNames.length > 0) {
+        qb.andWhere('tag.name IN (:...tagNames)', { tagNames });
+      }
+    }
+
+    // Paginate distinct book ids first, since the joins above multiply rows.
+    const [{ ids }, total] = await Promise.all([
+      qb
+        .clone()
+        .select('DISTINCT book.id', 'id')
+        .orderBy('book.id')
+        .offset((page - 1) * pageSize)
+        .limit(pageSize)
+        .getRawMany<{ id: string }>()
+        .then((rows) => ({ ids: rows.map((row) => row.id) })),
+      qb.clone().select('COUNT(DISTINCT book.id)', 'count').getRawOne<{ count: string }>()
+        .then((row) => Number(row?.count ?? 0)),
+    ]);
+
+    const data = ids.length
+      ? await this.booksRepository.find({
+          where: { id: In(ids) },
+          relations: BOOK_RELATIONS,
+        })
+      : [];
+    data.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+
+    return {
+      data,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async findOne(
