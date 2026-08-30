@@ -4,6 +4,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthorsModule } from './authors/authors.module';
+import { PublishersModule } from './publishers/publishers.module';
+import { TagsModule } from './tags/tags.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -36,6 +39,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       appSecret: 'YOUR_APP_SECRET',
       serviceId: 'api',
     }),
+    AuthorsModule,
+    PublishersModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

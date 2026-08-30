@@ -4,6 +4,7 @@ import { AppDataSource } from '../data-source';
 import { seedAuthors } from './seeders/01-authors.seeder';
 import { seedPublishers } from './seeders/02-publishers.seeder';
 import { seedTags } from './seeders/03-tags.seeder';
+import { seedUsers } from './seeders/04-users.seeder';
 import { seedBooks } from './seeders/05-books.seeder';
 import { seedBookAuthors } from './seeders/06-book-authors.seeder';
 import { seedBookTags } from './seeders/07-book-tags.seeder';
@@ -17,6 +18,7 @@ async function seed(): Promise<void> {
       seedAuthors(),
       seedPublishers(),
       seedTags(),
+      seedUsers(),
     ]);
 
     const books = await seedBooks(publishers);
