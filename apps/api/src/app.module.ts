@@ -7,6 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthorsModule } from './authors/authors.module';
 import { PublishersModule } from './publishers/publishers.module';
 import { TagsModule } from './tags/tags.module';
+import { UsersModule } from './users/users.module';
+import { BooksModule } from './books/books.module';
+import { BookInventoryModule } from './book-inventory/book-inventory.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -34,14 +37,17 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
-    ObserveModule.forRoot({
-      appKey: 'YOUR_APP_KEY',
-      appSecret: 'YOUR_APP_SECRET',
-      serviceId: 'api',
-    }),
+    // ObserveModule.forRoot({
+    //   appKey: 'YOUR_APP_KEY',
+    //   appSecret: 'YOUR_APP_SECRET',
+    //   serviceId: 'api',
+    // }),
     AuthorsModule,
     PublishersModule,
     TagsModule,
+    UsersModule,
+    BooksModule,
+    BookInventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
